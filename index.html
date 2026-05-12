@@ -3,319 +3,674 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Imposter — Word Game</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<title>IMPOSTER</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{background:#07090f;color:#e8edf5;font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
-body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,229,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,200,0.025) 1px,transparent 1px);background-size:40px 40px}
-input{background:#1a2236;border:1px solid #1e2d47;color:#e8edf5;font-family:'DM Mono',monospace;font-size:0.8rem;padding:8px 10px;outline:none;border-radius:4px;width:100%}
-input:focus{border-color:#00e5c8}
-input::placeholder{color:#3a4a6a}
-button{cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
-::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#2d4166;border-radius:2px}
+:root{
+  --bg:#0c0a00;
+  --bg2:#131000;
+  --bg3:#1a1500;
+  --yellow:#f5c400;
+  --yellow2:#ffd94d;
+  --yellow3:#ffe880;
+  --ydim:rgba(245,196,0,0.12);
+  --yglow:rgba(245,196,0,0.06);
+  --border:rgba(245,196,0,0.15);
+  --border2:rgba(245,196,0,0.3);
+  --text:#fff8dc;
+  --text2:rgba(255,248,220,0.65);
+  --text3:rgba(255,248,220,0.35);
+  --text4:rgba(255,248,220,0.15);
+  --green:#4ade80;
+  --gdim:rgba(74,222,128,0.12);
+  --red:#f87171;
+  --rdim:rgba(248,113,113,0.12);
+}
+html,body{min-height:100vh}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Nunito',sans-serif;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 70% 50% at 15% 10%,rgba(245,196,0,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 90%,rgba(245,196,0,0.05) 0%,transparent 60%);
+}
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+.wrap{position:relative;z-index:1}
+
+/* ── SCREENS ── */
+.screen{display:none!important}
+.screen.show{display:block!important}
+.screen.show-flex{display:flex!important}
+
+/* ── HEADER ── */
+.hdr{
+  padding:1.3rem 1.6rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:rgba(12,10,0,0.9);
+  backdrop-filter:blur(16px);
+  position:sticky;top:0;z-index:100;
+}
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:1.8rem;font-weight:900;letter-spacing:0.06em;line-height:1;
+  background:linear-gradient(120deg,var(--yellow),var(--yellow2),var(--yellow3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.logo-sub{
+  font-size:0.5rem;letter-spacing:0.35em;text-transform:uppercase;
+  color:var(--text3);font-weight:600;margin-top:3px;
+}
+.hdr-r{display:flex;align-items:center;gap:10px}
+.chip{
+  font-size:0.58rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;
+  padding:5px 14px;border-radius:30px;
+  border:1px solid var(--border2);color:var(--yellow);background:var(--ydim);
+}
+.ghost-btn{
+  background:rgba(255,248,220,0.04);border:1px solid var(--border);
+  color:var(--text3);font-family:'Nunito',sans-serif;font-size:0.63rem;
+  font-weight:700;letter-spacing:0.1em;padding:7px 16px;
+  cursor:pointer;text-transform:uppercase;border-radius:30px;transition:all 0.2s;
+}
+.ghost-btn:hover{background:var(--ydim);border-color:var(--border2);color:var(--yellow)}
+
+/* ── SETUP ── */
+.inner{max-width:660px;margin:0 auto;padding:2rem 1.5rem}
+.block{margin-bottom:2.2rem}
+.tag{
+  font-size:0.54rem;letter-spacing:0.35em;text-transform:uppercase;
+  color:var(--yellow);font-weight:800;
+  display:flex;align-items:center;gap:10px;margin-bottom:0.45rem;
+}
+.tag::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+.stitle{
+  font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;
+  color:var(--text);letter-spacing:0.02em;
+}
+.stitle em{color:var(--yellow2);font-style:italic}
+
+/* counter */
+.crow{display:flex;align-items:center;margin-bottom:6px}
+.cbtn{
+  width:42px;height:42px;background:var(--bg3);
+  border:1px solid var(--border);color:var(--text2);
+  font-size:1.2rem;cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;
+}
+.cbtn:first-child{border-radius:10px 0 0 10px}
+.cbtn:last-child{border-radius:0 10px 10px 0}
+.cbtn:hover:not(:disabled){background:var(--ydim);color:var(--yellow);border-color:var(--border2)}
+.cbtn:disabled{opacity:0.2;cursor:not-allowed}
+.cval{
+  min-width:66px;height:42px;background:var(--bg3);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:700;color:var(--yellow);
+}
+.cnote{font-size:0.7rem;color:var(--text3);font-weight:500;margin-top:5px}
+
+/* names */
+.nbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.smb{
+  background:transparent;border:1px solid var(--border);color:var(--text3);
+  font-family:'Nunito',sans-serif;font-size:0.58rem;font-weight:700;
+  letter-spacing:0.1em;padding:5px 15px;cursor:pointer;text-transform:uppercase;
+  border-radius:30px;transition:all 0.2s;
+}
+.smb:hover{border-color:var(--border2);color:var(--yellow)}
+.ngrid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));
+  gap:8px;max-height:296px;overflow-y:auto;
+  background:rgba(255,248,220,0.02);border:1px solid var(--border);
+  border-radius:12px;padding:12px;
+}
+.ngrid::-webkit-scrollbar{width:3px}
+.ngrid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.nrow{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:8px;padding:7px 10px;transition:border-color 0.2s;
+}
+.nrow:focus-within{border-color:var(--border2);background:var(--yglow)}
+.nidx{font-size:0.58rem;color:var(--text4);min-width:18px;font-weight:700}
+.ninp{
+  flex:1;background:transparent;border:none;color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:0.8rem;font-weight:600;outline:none;
+}
+.ninp::placeholder{color:var(--text4)}
+.ndel{background:none;border:none;color:var(--text4);cursor:pointer;font-size:1rem;padding:0 2px;transition:color 0.2s}
+.ndel:hover{color:var(--red)}
+
+/* start */
+.foot{border-top:1px solid var(--border);padding-top:1.75rem;margin-top:0.5rem}
+.notice{
+  background:var(--yglow);border:1px solid var(--border);border-radius:10px;
+  padding:0.75rem 1.2rem;margin-bottom:1.1rem;
+  font-size:0.7rem;color:var(--text3);text-align:center;
+  line-height:1.6;font-weight:600;letter-spacing:0.02em;
+}
+.notice b{color:var(--yellow)}
+.start-btn{
+  width:100%;padding:1rem;
+  background:linear-gradient(135deg,#c49a00,var(--yellow),var(--yellow2));
+  border:none;color:#0c0a00;
+  font-family:'Playfair Display',serif;font-size:1.35rem;font-weight:700;
+  letter-spacing:0.1em;cursor:pointer;border-radius:12px;
+  box-shadow:0 4px 24px rgba(245,196,0,0.35),inset 0 1px 0 rgba(255,255,255,0.2);
+  transition:all 0.25s;text-transform:uppercase;
+}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(245,196,0,0.5)}
+.start-btn:active{transform:translateY(0)}
+.err{color:var(--red);font-size:0.7rem;margin-top:8px;font-weight:600}
+
+/* ── LOADING ── */
+#loadScreen{
+  min-height:100vh;flex-direction:column;align-items:center;
+  justify-content:center;gap:2rem;position:relative;z-index:1;
+}
+.spin{width:76px;height:76px;position:relative}
+.spin::before,.spin::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:2px solid transparent;
+}
+.spin::before{border-top-color:var(--yellow);animation:spin 1s linear infinite}
+.spin::after{border-right-color:rgba(245,196,0,0.35);animation:spin 1.7s linear infinite reverse;inset:10px}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes popIn{from{opacity:0;transform:scale(0.88) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.load-label{
+  font-family:'Playfair Display',serif;font-size:1.45rem;font-weight:700;
+  background:linear-gradient(120deg,var(--yellow),var(--yellow2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;letter-spacing:0.1em;
+}
+.load-sub{
+  font-size:0.6rem;letter-spacing:0.3em;color:var(--text3);
+  text-transform:uppercase;font-weight:700;
+  animation:blink 1.5s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.25}}
+
+/* ── GAME ── */
+.game-inner{padding:1.5rem}
+.gtop{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;
+}
+.gstat{font-size:0.63rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);font-weight:700}
+.gstat b{color:var(--yellow)}
+.prog{height:3px;background:rgba(245,196,0,0.1);border-radius:2px;margin-bottom:1.5rem;overflow:hidden}
+.prog-f{height:100%;background:linear-gradient(90deg,var(--yellow),var(--yellow2));border-radius:2px;transition:width 0.5s ease;width:0%}
+.gmsg{text-align:center;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text3);margin-bottom:1.5rem;font-weight:700}
+.gmsg b{color:var(--yellow)}
+.allseen{
+  margin:0 0 1.25rem;background:var(--gdim);border:1px solid rgba(74,222,128,0.25);
+  border-radius:10px;padding:0.85rem 1.2rem;
+  font-size:0.68rem;letter-spacing:0.1em;color:var(--green);
+  text-align:center;text-transform:uppercase;font-weight:700;display:none;
+}
+
+/* ── CARDS ── */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px}
+.pcard{
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:14px;padding:1.2rem 0.9rem;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:8px;cursor:pointer;min-height:130px;
+  transition:all 0.3s;position:relative;overflow:hidden;user-select:none;
+}
+.pcard::before{
+  content:'';position:absolute;inset:0;border-radius:14px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(245,196,0,0.07),transparent 70%);
+  opacity:0;transition:opacity 0.3s;
+}
+.pcard:hover:not(.pdone)::before{opacity:1}
+.pcard:hover:not(.pdone){border-color:var(--border2);transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,0.5),0 0 0 1px rgba(245,196,0,0.12)}
+.pcard:active:not(.pdone){transform:translateY(-1px)}
+.pdone{background:var(--gdim);border-color:rgba(74,222,128,0.2)!important;cursor:default;transform:none!important;box-shadow:none!important}
+.pname{font-size:0.72rem;font-weight:800;color:var(--text2);letter-spacing:0.04em;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.picon{font-size:1.7rem;line-height:1}
+.ptap{font-size:0.53rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--text4);font-weight:700}
+.pseen{font-size:0.55rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--green);font-weight:800;background:rgba(74,222,128,0.12);padding:3px 10px;border-radius:10px;border:1px solid rgba(74,222,128,0.2)}
+
+.statbar{
+  display:flex;justify-content:center;gap:2.5rem;padding:1.25rem;
+  margin-top:1rem;border-top:1px solid var(--border);
+  font-size:0.62rem;letter-spacing:0.15em;color:var(--text3);
+  text-transform:uppercase;font-weight:700;
+}
+.statbar b{color:var(--text)}
+
+/* ── MODAL ── */
+.backdrop{
+  position:fixed;inset:0;z-index:300;
+  background:rgba(4,3,0,0.94);
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(14px);padding:1.25rem;
+  display:none;
+}
+.backdrop.open{display:flex!important}
+.mcard{
+  background:linear-gradient(155deg,rgba(245,196,0,0.07),rgba(245,196,0,0.02));
+  border:1px solid var(--border2);border-radius:20px;
+  padding:2.25rem 1.9rem;max-width:370px;width:100%;
+  position:relative;overflow:hidden;
+  animation:pop 0.38s cubic-bezier(0.34,1.56,0.64,1);
+  box-shadow:0 30px 80px rgba(0,0,0,0.8),inset 0 1px 0 rgba(245,196,0,0.1);
+}
+@keyframes pop{from{opacity:0;transform:scale(0.82) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.mcard::before{
+  content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(245,196,0,0.5),transparent);
+}
+.mglow{
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:200px;height:200px;border-radius:50%;filter:blur(50px);opacity:0.12;pointer-events:none;
+}
+.mglow.crew{background:var(--green)}
+.mglow.imp{background:var(--red)}
+
+.mplayer{
+  font-size:0.57rem;letter-spacing:0.3em;text-transform:uppercase;
+  color:var(--text3);font-weight:800;margin-bottom:0.7rem;
+  display:flex;align-items:center;gap:8px;position:relative;z-index:1;
+}
+.mdot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.mdot.crew{background:var(--green)}
+.mdot.imp{background:var(--red)}
+
+.mrole{
+  font-family:'Playfair Display',serif;font-size:2.6rem;font-weight:900;
+  line-height:1;margin-bottom:0.35rem;letter-spacing:0.03em;position:relative;z-index:1;
+}
+.mrole.crew{background:linear-gradient(135deg,var(--green),#86efac);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.mrole.imp{background:linear-gradient(135deg,var(--red),#fca5a5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:jolt 0.4s ease}
+@keyframes jolt{0%{transform:scale(1)}20%{transform:scale(1.07)}60%{transform:scale(0.97)}100%{transform:scale(1)}}
+
+.mbadge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:0.57rem;letter-spacing:0.14em;text-transform:uppercase;font-weight:800;
+  padding:4px 12px;border-radius:20px;margin-bottom:1.4rem;position:relative;z-index:1;
+}
+.mbadge.crew{background:var(--gdim);color:var(--green);border:1px solid rgba(74,222,128,0.25)}
+.mbadge.imp{background:var(--rdim);color:var(--red);border:1px solid rgba(248,113,113,0.25)}
+
+.mbox{
+  border-radius:12px;padding:1.2rem 1.4rem;margin-bottom:1.3rem;
+  position:relative;z-index:1;overflow:hidden;
+}
+.mbox::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(245,196,0,0.15),transparent)}
+.mbox.crew{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.18)}
+.mbox.imp{background:var(--ydim);border:1px solid var(--border2)}
+
+.mlbl{font-size:0.54rem;letter-spacing:0.25em;text-transform:uppercase;font-weight:800;margin-bottom:0.55rem}
+.mbox.crew .mlbl{color:rgba(74,222,128,0.55)}
+.mbox.imp .mlbl{color:rgba(245,196,0,0.55)}
+
+.mword{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--text);line-height:1.2}
+.mhint{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:900;color:var(--yellow);letter-spacing:0.06em;line-height:1.2}
+.msub{font-size:0.54rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text4);margin-top:0.6rem;font-weight:700}
+
+.mwarn{
+  background:rgba(248,113,113,0.07);border:1px solid rgba(248,113,113,0.18);
+  border-radius:10px;padding:0.75rem 1rem;
+  font-size:0.75rem;color:rgba(252,165,165,0.8);
+  line-height:1.6;margin-bottom:1.3rem;font-style:italic;position:relative;z-index:1;
+}
+.mclose{
+  width:100%;background:rgba(245,196,0,0.05);border:1px solid var(--border2);
+  color:var(--text2);font-family:'Nunito',sans-serif;font-size:0.7rem;font-weight:800;
+  letter-spacing:0.12em;padding:0.85rem;cursor:pointer;text-transform:uppercase;
+  border-radius:10px;transition:all 0.25s;position:relative;z-index:1;
+}
+.mclose:hover{background:var(--ydim);border-color:var(--yellow);color:var(--yellow)}
+.tbar{height:2px;background:rgba(245,196,0,0.08);border-radius:1px;margin-top:10px;overflow:hidden;position:relative;z-index:1}
+.tfill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--yellow2));border-radius:1px;transition:width 1s linear}
+.ttxt{text-align:center;font-size:0.54rem;letter-spacing:0.12em;color:var(--text4);margin-top:5px;font-weight:700;text-transform:uppercase;position:relative;z-index:1}
+
+@media(max-width:560px){
+  .hdr,.inner,.game-inner{padding:1rem}
+  .cgrid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+  .mcard{padding:1.7rem 1.3rem;border-radius:16px}
+  .mrole{font-size:2rem}
+  .mhint{font-size:2rem}
+}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
+<div class="wrap">
 
-const WORDS = [
+<!-- ══ SETUP ══ -->
+<div id="sScreen" class="screen show">
+  <div class="hdr">
+    <div><div class="logo">Imposter</div><div class="logo-sub">AI Word Game · Up to 50 Players</div></div>
+    <div class="hdr-r"><div class="chip">✦ AI Hints</div></div>
+  </div>
+  <div class="inner">
+
+    <div class="block">
+      <div class="tag">01 · Imposters</div>
+      <div class="stitle">Pick the <em>Imposters</em></div>
+      <div class="crow">
+        <button class="cbtn" id="di">−</button>
+        <div class="cval" id="iv">1</div>
+        <button class="cbtn" id="ii">+</button>
+      </div>
+      <div class="cnote">Each imposter receives one secret word hint instead of the actual word</div>
+    </div>
+
+    <div class="block">
+      <div class="tag">02 · Players</div>
+      <div class="stitle">Add your <em>Players</em></div>
+      <div class="crow" style="margin-bottom:6px">
+        <button class="cbtn" id="dp">−</button>
+        <div class="cval" id="pv">6</div>
+        <button class="cbtn" id="ip">+</button>
+      </div>
+      <div class="cnote" style="margin-bottom:14px">4 – 50 players</div>
+      <div class="nbar">
+        <button class="smb" id="autoBtn">✦ Auto-fill Names</button>
+        <button class="smb" id="clrBtn">Clear All</button>
+      </div>
+      <div class="ngrid" id="nameGrid"></div>
+    </div>
+
+    <div class="foot">
+      <div class="notice">A <b>random word</b> is auto-picked every round — crewmates see the word, the imposter gets only a <b>single-word hint</b></div>
+      <button class="start-btn" id="goBtn">Deal Cards →</button>
+      <div class="err" id="errEl"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOADING ══ -->
+<div id="lScreen" class="screen" style="min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:2rem;position:relative;z-index:1">
+  <div class="spin"></div>
+  <div class="load-label" id="lWord">— — —</div>
+  <div class="load-sub">Generating imposter hint…</div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="gScreen" class="screen">
+  <div class="hdr">
+    <div><div class="logo">Imposter</div></div>
+    <div class="hdr-r">
+      <div class="gstat"><b id="gimp">1</b> Imposter · <b id="gply">6</b> Players</div>
+      <button class="ghost-btn" id="newBtn">↺ New Game</button>
+    </div>
+  </div>
+  <div class="game-inner">
+    <div class="prog"><div class="prog-f" id="pf"></div></div>
+    <div class="gmsg">Pass the device — each player taps their card <b>alone & privately</b></div>
+    <div class="allseen" id="allseen">✦ Everyone has seen their role — start the discussion!</div>
+    <div class="cgrid" id="cgrid"></div>
+  </div>
+  <div class="statbar">
+    <span>Waiting <b id="wn">0</b></span>
+    <span>Ready <b id="rn">0</b></span>
+  </div>
+</div>
+
+<!-- ══ MODAL ══ -->
+<div class="backdrop" id="bd">
+  <div class="mcard">
+    <div class="mglow" id="mg"></div>
+    <div class="mplayer"><div class="mdot" id="mdot"></div><span id="mname">PLAYER</span></div>
+    <div class="mrole" id="mrole">Crewmate</div>
+    <div class="mbadge" id="mbadge">✓ You know the word</div>
+    <div class="mbox" id="mbox">
+      <div class="mlbl" id="mlbl">Your word is</div>
+      <div id="mcontent"></div>
+    </div>
+    <div class="mwarn" id="mwarn" style="display:none">"You don't know the exact word — use your hint wisely. Stay calm, blend in, and don't get caught."</div>
+    <button class="mclose" id="mclose">I've seen it — close</button>
+    <div class="tbar"><div class="tfill" id="tf" style="width:100%"></div></div>
+    <div class="ttxt" id="tt">Closes in 10s</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const WORDS=[
+  // Daily life - food
   "Rice","Dal","Idli","Dosa","Chapati","Biryani","Sambar","Pickle","Curd","Ghee",
-  "Milk","Tea","Coffee","Water","Juice","Egg","Bread","Biscuit","Chocolate","Mango",
-  "Banana","Tomato","Onion","Potato","Carrot","Chilli","Lemon","Coconut","Tamarind","Jaggery",
-  "Bed","Pillow","Blanket","Chair","Table","Fan","Lamp","Mirror","Broom","Bucket",
-  "Soap","Towel","Toothbrush","Comb","Scissors","Candle","Clock","Calendar","Bag","Wallet",
-  "Key","Umbrella","Slipper","Spectacles","Pen","Notebook","Newspaper","Rope","Coin","Basket",
-  "School","Market","Hospital","Temple","Bus","Auto","Train","Bicycle","Road","Bridge",
-  "Garden","Park","Well","River","Rain","Sun","Moon","Star","Cloud","Wind",
-  "Dog","Cat","Cow","Hen","Parrot","Fish","Ant","Butterfly","Crow","Peacock",
+  "Milk","Tea","Coffee","Chocolate","Mango","Banana","Tomato","Onion","Potato","Lemon",
+  // Daily life - home
+  "Bed","Pillow","Blanket","Chair","Table","Fan","Mirror","Candle","Clock","Umbrella",
+  "Key","Bag","Wallet","Pen","Notebook","Soap","Towel","Comb","Scissors","Lamp",
+  // Daily life - places & nature
+  "School","Market","Hospital","Temple","Garden","Park","River","Rain","Sun","Moon",
+  "Star","Cloud","Wind","Bridge","Road","Train","Bicycle","Bus","Tree","Mountain",
+  // Animals
+  "Dog","Cat","Cow","Parrot","Fish","Butterfly","Crow","Peacock","Lion","Eagle",
+  // English general words
+  "Rainbow","Beautiful","Emotional","Interesting","Adventure","Silence","Freedom","Memory",
+  "Shadow","Treasure","Miracle","Journey","Courage","Laughter","Friendship","Wisdom",
+  "Dream","Hope","Patience","Kindness","Jealousy","Lonely","Angry","Excited","Nervous",
+  "Curious","Proud","Guilty","Thankful","Confused","Sunrise","Sunset","Ocean","Desert",
+  "Forest","Volcano","Thunder","Lightning","Snowflake","Breeze","Mystery","Secret",
+  "Victory","Failure","Bravery","Sadness","Happiness","Peaceful","Powerful","Gentle",
+  "Honest","Loyal","Creative","Talent","Passion","Inspire","Challenge","Achieve",
+  "Celebrate","Discover","Explore","Imagine","Believe","Wonder","Surprise","Grateful",
+  // Telugu Heroes
   "Mahesh Babu","Prabhas","Allu Arjun","Ram Charan","Jr NTR","Vijay Deverakonda",
   "Nani","Ravi Teja","Pawan Kalyan","Chiranjeevi","Balakrishna","Venkatesh",
   "Nagarjuna","Siddharth","Adivi Sesh","Sharwanand","Nikhil","Gopichand",
+  // Telugu Heroines
   "Samantha","Rashmika Mandanna","Pooja Hegde","Anushka Shetty","Kajal Aggarwal",
   "Tamannaah","Nayanthara","Rakul Preet","Shruti Haasan","Keerthi Suresh",
   "Sai Pallavi","Nabha Natesh","Ritu Varma","Payal Rajput","Lavanya Tripathi",
   "Pragya Jaiswal","Raashi Khanna","Sreeleela","Catherine Tresa","Divyansha Kaushik"
 ];
 
-const AUTO_NAMES = ["Arjun","Bhanu","Charan","Deepa","Eswar","Faria","Geetha","Hari","Indira","Jai","Kavya","Lokesh","Manasa","Naveen","Padma","Ravi","Swathi","Tarun","Uma","Vijay","Yamini","Zara","Anil","Bindu","Chandu","Divya","Eswar","Faiz","Gopi","Heera","Ishaan","Jyothi","Kiran","Lalitha","Mahesh","Nisha","Omkar","Priya","Rahul","Sita","Tej","Usha","Varun","Wasim","Xena","Yash","Zoya","Amara","Babu","Chitra"];
+const ANAMES=["Arjun","Bhanu","Charan","Deepa","Eswar","Faria","Geetha","Hari","Indira","Jai","Kavya","Lokesh","Manasa","Naveen","Padma","Ravi","Swathi","Tarun","Uma","Vijay","Yamini","Zara","Anil","Bindu","Chandu","Divya","Faiz","Gopi","Heera","Ishaan","Jyothi","Kiran","Lalitha","Mahesh","Nisha","Omkar","Priya","Rahul","Sita","Tej","Usha","Varun","Wasim","Yash","Zoya","Amara","Babu","Chitra","Dinesh","Esha"];
 
-function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const ICONS=["🌙","🔮","🎴","💎","⚡","🦋","🌊","🎭","🗝️","🌺","♟️","🌀","🎯","🪐","🔱","🌿","🎪","🦚","🕯️","🧿"];
 
-const FALLBACK={
-  "Rice":"fields and water make it","Dal":"pairs with everything on plate","Idli":"mornings start with it","Dosa":"crispy flat and round","Chapati":"rolled and pressed flat",
-  "Biryani":"dum cooked in layers","Sambar":"poured over things","Pickle":"sits in a jar for months","Curd":"set overnight in a pot","Ghee":"melts on hot things",
-  "Milk":"comes before sunrise","Tea":"morning without it is incomplete","Coffee":"keeps you awake at night","Water":"in everything but tasteless","Juice":"squeezed out of something",
-  "Egg":"came before or after","Bread":"sliced and stacked","Biscuit":"dipped before eaten","Chocolate":"melts in your hand","Mango":"king of summers",
-  "Banana":"monkeys love it too","Tomato":"red but not a fruit to most","Onion":"tears without sadness","Potato":"underground and underrated","Carrot":"buried orange",
-  "Chilli":"regret after eating","Lemon":"makes your face twist","Coconut":"hard outside soft inside","Tamarind":"used in most South Indian cooking","Jaggery":"unrefined sweetness",
-  "Bed":"best place on earth","Pillow":"hugged more than people","Blanket":"never big enough","Chair":"only one per person","Table":"everything ends up on it",
-  "Fan":"moves but stays in place","Lamp":"chased moths at night","Mirror":"shows what others see","Broom":"last thing used before sleeping","Bucket":"filled and carried",
-  "Soap":"shrinks with every use","Towel":"hung after every shower","Toothbrush":"used twice but often forgotten","Comb":"fights every morning","Scissors":"cuts but never hurts itself",
-  "Candle":"melts as it works","Clock":"never stops moving","Calendar":"crossed off day by day","Bag":"heavier than expected","Wallet":"thin but important",
-  "Key":"useless without its pair","Umbrella":"forgotten on sunny days","Slipper":"lost under the bed","Spectacles":"world is blurry without it","Pen":"runs out at wrong time",
-  "Notebook":"half filled and forgotten","Newspaper":"old by afternoon","Rope":"twisted and tied","Coin":"too small to care about","Basket":"woven from nothing useful",
-  "School":"years spent inside it","Market":"louder in the morning","Hospital":"nobody visits happily","Temple":"bells ring outside","Bus":"always late or early",
-  "Auto":"honks before stopping","Train":"heard before seen","Bicycle":"balance is the only rule","Road":"taken every single day","Bridge":"connects what was once apart",
-  "Garden":"grows without asking","Park":"crowded only in evenings","Well":"deep and circular","River":"never the same twice","Rain":"smells before it arrives",
-  "Sun":"follows you everywhere","Moon":"changes shape every night","Star":"there even when hidden","Cloud":"never stays in one place","Wind":"felt but never seen",
-  "Dog":"knows when you're home","Cat":"on its own schedule","Cow":"sacred and slow","Hen":"up before everyone else","Parrot":"repeats what it hears",
-  "Fish":"silent and forgotten","Ant":"carries more than its weight","Butterfly":"was something else before","Crow":"smarter than it looks","Peacock":"dances when it rains",
-  "Mahesh Babu":"never needs introduction in Tollywood","Prabhas":"Tollywood went national because of him","Allu Arjun":"style became a movement","Ram Charan":"royal family of Telugu cinema","Jr NTR":"roars louder than words",
-  "Vijay Deverakonda":"heartbreak made him famous","Nani":"audiences trust him fully","Ravi Teja":"never slows down on screen","Pawan Kalyan":"fans wait for years for him","Chiranjeevi":"grandfather of Telugu stardom",
-  "Balakrishna":"larger than screen itself","Venkatesh":"evergreen in Telugu homes","Nagarjuna":"stays relevant across decades","Siddharth":"crossed language borders early","Adivi Sesh":"proved small can be big",
-  "Sharwanand":"picks roles carefully","Nikhil":"consistent without much noise","Gopichand":"action more than words",
-  "Samantha":"reinvented herself twice","Rashmika Mandanna":"conquered North and South both","Pooja Hegde":"comfort in glamour","Anushka Shetty":"proved big is powerful","Kajal Aggarwal":"long career across industries",
-  "Tamannaah":"survived multiple film eras","Nayanthara":"industry on her own terms","Rakul Preet":"fitness before roles","Shruti Haasan":"talent from both parents","Keerthi Suresh":"award before fame",
-  "Sai Pallavi":"dances like nobody watches","Nabha Natesh":"energy on screen","Ritu Varma":"small film big name","Payal Rajput":"bold choices always","Lavanya Tripathi":"quiet but consistent",
-  "Pragya Jaiswal":"few films big impact","Raashi Khanna":"crosses industries easily","Sreeleela":"moves faster than the song","Catherine Tresa":"Tamil Telugu crossover","Divyansha Kaushik":"debut was unforgettable"
+const FB={
+  // food
+  "Rice":"grain","Dal":"lentil","Idli":"steamed","Dosa":"crispy","Chapati":"flatbread",
+  "Biryani":"layered","Sambar":"tangy","Pickle":"preserved","Curd":"fermented","Ghee":"golden",
+  "Milk":"white","Tea":"brewed","Coffee":"bitter","Chocolate":"melting","Mango":"tropical",
+  "Banana":"yellow","Tomato":"saucy","Onion":"tearful","Potato":"underground","Lemon":"sour",
+  // home
+  "Bed":"horizontal","Pillow":"soft","Blanket":"warm","Chair":"seated","Table":"flat",
+  "Fan":"rotating","Mirror":"reflective","Candle":"melting","Clock":"ticking","Umbrella":"shielding",
+  "Key":"metallic","Bag":"carried","Wallet":"folded","Pen":"inked","Notebook":"lined",
+  "Soap":"lathery","Towel":"absorbent","Comb":"toothed","Scissors":"bladed","Lamp":"glowing",
+  // places & nature
+  "School":"education","Market":"trading","Hospital":"healing","Temple":"sacred",
+  "Garden":"planted","Park":"outdoor","River":"flowing","Rain":"falling","Sun":"blazing",
+  "Moon":"glowing","Star":"distant","Cloud":"drifting","Wind":"invisible","Bridge":"spanning",
+  "Road":"paved","Train":"tracked","Bicycle":"pedalled","Bus":"public","Tree":"rooted","Mountain":"towering",
+  // animals
+  "Dog":"loyal","Cat":"independent","Cow":"gentle","Parrot":"colourful","Fish":"silent",
+  "Butterfly":"transformed","Crow":"clever","Peacock":"dancing","Lion":"fearless","Eagle":"soaring",
+  // English general words
+  "Rainbow":"prismatic","Beautiful":"captivating","Emotional":"overwhelming","Interesting":"engaging",
+  "Adventure":"thrilling","Silence":"deafening","Freedom":"boundless","Memory":"fading",
+  "Shadow":"trailing","Treasure":"priceless","Miracle":"unexpected","Journey":"endless",
+  "Courage":"unshakeable","Laughter":"contagious","Friendship":"irreplaceable","Wisdom":"timeless",
+  "Dream":"weightless","Hope":"flickering","Patience":"invisible","Kindness":"disarming",
+  "Jealousy":"consuming","Lonely":"hollow","Angry":"volcanic","Excited":"restless","Nervous":"trembling",
+  "Curious":"restless","Proud":"upright","Guilty":"sinking","Thankful":"warmed","Confused":"tangled",
+  "Sunrise":"awakening","Sunset":"fleeting","Ocean":"bottomless","Desert":"scorching",
+  "Forest":"whispering","Volcano":"explosive","Thunder":"rumbling","Lightning":"blinding",
+  "Snowflake":"unique","Breeze":"fleeting","Mystery":"unsolved","Secret":"buried",
+  "Victory":"earned","Failure":"temporary","Bravery":"quiet","Sadness":"heavy","Happiness":"infectious",
+  "Peaceful":"still","Powerful":"commanding","Gentle":"calming","Honest":"naked","Loyal":"steadfast",
+  "Creative":"boundless","Talent":"inherited","Passion":"consuming","Inspire":"igniting",
+  "Challenge":"daunting","Achieve":"rewarding","Celebrate":"vibrant","Discover":"awakening",
+  "Explore":"daring","Imagine":"limitless","Believe":"stubborn","Wonder":"childlike",
+  "Surprise":"sudden","Grateful":"humbling",
+  // Telugu Heroes
+  "Mahesh Babu":"superstar","Prabhas":"mass","Allu Arjun":"stylish","Ram Charan":"royal",
+  "Jr NTR":"roaring","Vijay Deverakonda":"intense","Nani":"natural","Ravi Teja":"energetic",
+  "Pawan Kalyan":"powerful","Chiranjeevi":"legend","Balakrishna":"loud","Venkatesh":"evergreen",
+  "Nagarjuna":"versatile","Siddharth":"crossover","Adivi Sesh":"realistic",
+  "Sharwanand":"subtle","Nikhil":"consistent","Gopichand":"action",
+  // Telugu Heroines
+  "Samantha":"bold","Rashmika Mandanna":"nationwide","Pooja Hegde":"glamorous",
+  "Anushka Shetty":"commanding","Kajal Aggarwal":"timeless","Tamannaah":"survivor",
+  "Nayanthara":"independent","Rakul Preet":"fit","Shruti Haasan":"talented",
+  "Keerthi Suresh":"awarded","Sai Pallavi":"graceful","Nabha Natesh":"energetic",
+  "Ritu Varma":"versatile","Payal Rajput":"daring","Lavanya Tripathi":"steady",
+  "Pragya Jaiswal":"impactful","Raashi Khanna":"flexible","Sreeleela":"electric",
+  "Catherine Tresa":"crossover","Divyansha Kaushik":"debut"
 };
 
-async function fetchHint(word){
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "anthropic-version":"2023-06-01",
-        "anthropic-dangerous-direct-browser-access":"true"
-      },
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:100,
-        system:"You are a clever hint-writer for a word guessing game. Given a secret word, write ONE short indirect clue (max 8 words). Rules: Do NOT say the word or its synonym. Do NOT give the category directly. Instead describe a feeling, behaviour, situation, or indirect association. Make it tricky but fair. Examples: Rice=fields flooded before harvest, Umbrella=forgotten on sunny mornings, Mahesh Babu=Tollywood never needed Bollywood, Onion=tears without any sadness, Candle=shrinks as it works. Output ONLY the clue, nothing else.",
-        messages:[{role:"user",content:"Secret word: "+word}]
-      })
-    });
-    if(!res.ok)throw new Error("status "+res.status);
-    const data=await res.json();
-    return data.content[0].text.trim();
-  }catch(e){
-    console.warn("API failed, using fallback:",e.message);
-    return FALLBACK[word]||(word.length>8?"famous personality":"daily life item");
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]]}return b}
+const $=id=>document.getElementById(id);
+
+function showScreen(id){
+  // hide all
+  $("sScreen").className="screen";
+  $("lScreen").className="screen";
+  $("gScreen").className="screen";
+  // show target
+  if(id==="lScreen"){
+    $("lScreen").className="screen show-flex";
+  } else {
+    $(id).className="screen show";
   }
 }
 
-function Counter({val,onDec,onInc,min,max}){
-  return(
-    <div style={{display:"flex",alignItems:"center",gap:8}}>
-      <button onClick={onDec} disabled={val<=min} style={{width:36,height:36,background:"#111827",border:"1px solid #1e2d47",color:val<=min?"#3a4a6a":"#e8edf5",fontSize:"1.1rem",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
-      <span style={{fontFamily:"Georgia,serif",fontSize:"2rem",fontWeight:700,color:"#00e5c8",minWidth:44,textAlign:"center"}}>{val}</span>
-      <button onClick={onInc} disabled={val>=max} style={{width:36,height:36,background:"#111827",border:"1px solid #1e2d47",color:val>=max?"#3a4a6a":"#e8edf5",fontSize:"1.1rem",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
-    </div>
-  );
+async function getHint(w){
+  try{
+    const r=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json","anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",max_tokens:60,
+        system:"You write single-word hints for a word game. Output exactly ONE word — an indirect association. Never use the word itself or its direct category. Use a property, feeling, or behaviour instead. Examples: Rice=grain, Onion=tearful, Candle=melting, Mahesh Babu=superstar, Sai Pallavi=graceful, Rain=petrichor. Output ONLY the single word. Nothing else.",
+        messages:[{role:"user",content:"Word: "+w}]
+      })
+    });
+    if(!r.ok)throw new Error();
+    const d=await r.json();
+    return d.content[0].text.trim().replace(/[^a-zA-Z\-]/g,"");
+  }catch{
+    return FB[w]||"mysterious";
+  }
 }
 
-function Setup({onStart}){
-  const [pCount,setPCount]=useState(6);
-  const [impCount,setImpCount]=useState(1);
-  const [names,setNames]=useState(Array(6).fill(""));
-  const [loading,setLoading]=useState(false);
-  const [error,setError]=useState("");
+// state
+let ic=1,pc=6,gs=null,ci=null,tiv=null,ato=null;
 
-  const syncNames=(n)=>setNames(prev=>{const a=[...prev];while(a.length<n)a.push("");return a.slice(0,n)});
-  const setP=(n)=>{setPCount(n);syncNames(n)};
-  const autoFill=()=>setNames(Array(pCount).fill(0).map((_,i)=>AUTO_NAMES[i]||`Player ${i+1}`));
-  const clearAll=()=>setNames(Array(pCount).fill(""));
-  const updateName=(i,v)=>setNames(p=>{const a=[...p];a[i]=v;return a});
+// counters
+$("di").onclick=()=>{if(ic>1){ic--;$("iv").textContent=ic}};
+$("ii").onclick=()=>{if(ic<5){ic++;$("iv").textContent=ic}};
+$("dp").onclick=()=>{if(pc>4){pc--;$("pv").textContent=pc;buildNames()}};
+$("ip").onclick=()=>{if(pc<50){pc++;$("pv").textContent=pc;buildNames()}};
 
-  const start=async()=>{
-    setError("");
-    const actualImp=Math.min(impCount,Math.max(1,Math.floor(pCount/4)));
-    const playerNames=names.map((n,i)=>n.trim()||`Player ${i+1}`);
-    const word=WORDS[Math.floor(Math.random()*WORDS.length)];
-    setLoading(true);
-    try{
-      const hint=await fetchHint(word);
-      onStart(playerNames,word,hint,actualImp);
-    }catch{
-      setError("Connection error. Please try again.");
-      setLoading(false);
-    }
-  };
-
-  if(loading)return(
-    <div style={{minHeight:"80vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20,position:"relative",zIndex:1}}>
-      <div style={{width:64,height:64,border:"2px solid #1e2d47",borderTopColor:"#00e5c8",borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
-      <div style={{fontFamily:"Georgia,serif",fontSize:"1.5rem",fontWeight:700,color:"#00e5c8"}}>Picking a word…</div>
-      <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.2em",color:"#6b7fa3",textTransform:"uppercase"}}>Generating hint for imposter</div>
-    </div>
-  );
-
-  return(
-    <div style={{maxWidth:680,margin:"0 auto",padding:"1.5rem",position:"relative",zIndex:1}}>
-      <div style={{marginBottom:"2rem"}}>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.25em",color:"#00e5c8",textTransform:"uppercase",marginBottom:"0.75rem",paddingBottom:"0.4rem",borderBottom:"1px solid #1e2d47"}}>Imposters</div>
-        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
-          <Counter val={impCount} onDec={()=>setImpCount(i=>i-1)} onInc={()=>setImpCount(i=>i+1)} min={1} max={5}/>
-          <span style={{fontSize:"0.8rem",color:"#6b7fa3"}}>imposter{impCount>1?"s":""} · gets a hint instead of the word</span>
-        </div>
-      </div>
-
-      <div style={{marginBottom:"2rem"}}>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.25em",color:"#00e5c8",textTransform:"uppercase",marginBottom:"0.75rem",paddingBottom:"0.4rem",borderBottom:"1px solid #1e2d47"}}>Players</div>
-        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:"1rem"}}>
-          <Counter val={pCount} onDec={()=>setP(pCount-1)} onInc={()=>setP(pCount+1)} min={4} max={50}/>
-          <span style={{fontSize:"0.8rem",color:"#6b7fa3"}}>players (4–50)</span>
-        </div>
-        <div style={{display:"flex",gap:8,marginBottom:"0.75rem",flexWrap:"wrap"}}>
-          <button onClick={autoFill} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>Auto-fill names</button>
-          <button onClick={clearAll} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>Clear all</button>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8,maxHeight:280,overflowY:"auto",border:"1px solid #1e2d47",borderRadius:4,padding:10,background:"#111827"}}>
-          {names.map((n,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"#1a2236",border:"1px solid #1e2d47",borderRadius:4,padding:"6px 8px"}}>
-              <span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",color:"#3a4a6a",minWidth:18}}>{String(i+1).padStart(2,"0")}</span>
-              <input value={n} placeholder={`Player ${i+1}`} maxLength={18} onChange={e=>updateName(i,e.target.value)} style={{flex:1,background:"transparent",border:"none",color:"#e8edf5",fontFamily:"'DM Mono',monospace",fontSize:"0.75rem",outline:"none",padding:"1px 0",width:"100%"}}/>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{borderTop:"1px solid #1e2d47",paddingTop:"1.5rem"}}>
-        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.65rem",letterSpacing:"0.08em",color:"#6b7fa3",marginBottom:"1rem",textAlign:"center",background:"rgba(0,229,200,0.05)",border:"1px solid rgba(0,229,200,0.12)",borderRadius:4,padding:"0.6rem 1rem"}}>
-          ✦ Random word auto-assigned every round — no typing needed
-        </div>
-        <button onClick={start} style={{width:"100%",background:"#00e5c8",border:"none",color:"#07090f",fontFamily:"Georgia,serif",fontSize:"1.2rem",fontWeight:700,padding:"0.9rem",borderRadius:4,letterSpacing:"0.04em"}}>
-          Start Game →
-        </button>
-        {error&&<div style={{color:"#ff4757",fontFamily:"'DM Mono',monospace",fontSize:"0.68rem",marginTop:8}}>{error}</div>}
-      </div>
-    </div>
-  );
+function buildNames(){
+  const g=$("nameGrid");
+  while(g.children.length>pc)g.removeChild(g.lastChild);
+  for(let i=g.children.length;i<pc;i++){
+    const d=document.createElement("div");d.className="nrow";
+    d.innerHTML=`<span class="nidx">${String(i+1).padStart(2,"0")}</span><input class="ninp" placeholder="Player ${i+1}" maxlength="18"><button class="ndel">×</button>`;
+    d.querySelector(".ndel").onclick=()=>{if(pc>4){pc--;$("pv").textContent=pc;buildNames()}};
+    g.appendChild(d);
+  }
 }
 
-function Game({players,onRestart}){
-  const [seen,setSeen]=useState(new Set());
-  const [modal,setModal]=useState(null);
-  const [timeLeft,setTimeLeft]=useState(8);
-  const timerRef=useRef(null);
+$("autoBtn").onclick=()=>document.querySelectorAll(".ninp").forEach((el,i)=>el.value=ANAMES[i]||"Player "+(i+1));
+$("clrBtn").onclick=()=>document.querySelectorAll(".ninp").forEach((el,i)=>{el.value="";el.placeholder="Player "+(i+1)});
 
-  const openCard=(i)=>{if(seen.has(i))return;setModal(i);setTimeLeft(8)};
+$("goBtn").onclick=async()=>{
+  $("errEl").textContent="";
+  const names=[...document.querySelectorAll(".ninp")].map((el,i)=>el.value.trim()||"Player "+(i+1));
+  const nImp=Math.min(ic,Math.max(1,Math.floor(pc/4)));
+  const word=WORDS[Math.floor(Math.random()*WORDS.length)];
+  $("lWord").textContent="Getting word…";
+  showScreen("lScreen");
+  try{
+    const hint=await getHint(word);
+    launch(names,word,hint,nImp);
+  }catch{
+    $("errEl").textContent="Connection error — please try again.";
+    showScreen("sScreen");
+  }
+};
 
-  useEffect(()=>{
-    if(modal===null)return;
-    clearInterval(timerRef.current);
-    timerRef.current=setInterval(()=>{
-      setTimeLeft(t=>{if(t<=1){closeModal();return 0;}return t-1;});
-    },1000);
-    return()=>clearInterval(timerRef.current);
-  },[modal]);
-
-  const closeModal=()=>{
-    clearInterval(timerRef.current);
-    if(modal!==null)setSeen(prev=>new Set([...prev,modal]));
-    setModal(null);
-  };
-
-  const seenCount=seen.size,total=players.length;
-  const p=modal!==null?players[modal]:null;
-  const isCrew=p?.role==="crew";
-
-  return(
-    <div style={{position:"relative",zIndex:1}}>
-      <div style={{height:3,background:"#1e2d47",margin:"0 1.5rem 1.25rem"}}>
-        <div style={{height:"100%",background:"#00e5c8",borderRadius:2,transition:"width 0.4s",width:`${(seenCount/total)*100}%`}}/>
-      </div>
-      <div style={{textAlign:"center",fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.12em",color:"#6b7fa3",textTransform:"uppercase",padding:"0 1.5rem",marginBottom:"1rem"}}>
-        Pass the device — each player taps their card <b style={{color:"#f0b429"}}>privately</b>
-      </div>
-      {seenCount===total&&(
-        <div style={{margin:"0 1.5rem 1rem",background:"rgba(46,213,115,0.08)",border:"1px solid rgba(46,213,115,0.2)",borderRadius:4,padding:"0.75rem 1rem",fontFamily:"'DM Mono',monospace",fontSize:"0.68rem",color:"#2ed573",textAlign:"center"}}>
-          ✓ Everyone seen their role — start the discussion!
-        </div>
-      )}
-      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,padding:"0 1.5rem"}}>
-        {players.map((p,i)=>{
-          const done=seen.has(i);
-          return(
-            <div key={i} onClick={()=>openCard(i)} style={{border:`1px solid ${done?"rgba(46,213,115,0.25)":"#1e2d47"}`,background:done?"rgba(46,213,115,0.06)":"#111827",borderRadius:6,padding:"1rem 0.75rem",textAlign:"center",aspectRatio:"4/3",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,cursor:done?"default":"pointer",userSelect:"none"}}>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.65rem",color:"#6b7fa3",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>{p.name}</div>
-              <div style={{fontSize:"1.5rem",lineHeight:1}}>{done?"✓":"👤"}</div>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",letterSpacing:"0.12em",textTransform:"uppercase",color:done?"#2ed573":"#3a4a6a"}}>{done?"seen":"tap to reveal"}</div>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{display:"flex",justifyContent:"center",gap:"2rem",padding:"1.25rem 1.5rem",borderTop:"1px solid #1e2d47",marginTop:"1.5rem",fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.12em",color:"#6b7fa3",textTransform:"uppercase"}}>
-        <span>Waiting: <b style={{color:"#e8edf5"}}>{total-seenCount}</b></span>
-        <span>Ready: <b style={{color:"#2ed573"}}>{seenCount}</b></span>
-      </div>
-
-      {modal!==null&&p&&(
-        <div onClick={e=>e.target===e.currentTarget&&closeModal()} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.9)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{background:"#0d1120",border:"1px solid #2d4166",borderRadius:8,padding:"2rem 1.75rem",maxWidth:360,width:"100%",animation:"popIn 0.25s ease-out"}}>
-            <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",letterSpacing:"0.25em",color:"#6b7fa3",marginBottom:"0.6rem",textTransform:"uppercase"}}>{p.name}</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:"2.4rem",fontWeight:900,lineHeight:1,marginBottom:"0.4rem",color:isCrew?"#2ed573":"#ff4757"}}>{isCrew?"Crewmate":"Imposter"}</div>
-            <div style={{display:"inline-block",fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",letterSpacing:"0.15em",textTransform:"uppercase",padding:"3px 10px",borderRadius:3,marginBottom:"1.25rem",background:isCrew?"rgba(46,213,115,0.1)":"rgba(255,71,87,0.1)",color:isCrew?"#2ed573":"#ff4757",border:`1px solid ${isCrew?"rgba(46,213,115,0.25)":"rgba(255,71,87,0.25)"}`}}>
-              {isCrew?"✓ You know the word":"⚠ You are the Imposter"}
-            </div>
-            <div style={{border:"1px solid #2d4166",borderRadius:6,padding:"1rem 1.25rem",marginBottom:"1.25rem",background:"#111827"}}>
-              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",letterSpacing:"0.2em",color:"#6b7fa3",marginBottom:"0.5rem",textTransform:"uppercase"}}>{isCrew?"Your word is":"Your hint is"}</div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:"2rem",fontWeight:700,color:isCrew?"#e8edf5":"#f0b429",lineHeight:1.2}}>{p.content}</div>
-              {!isCrew&&<div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",color:"#3a4a6a",marginTop:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Guess the exact word from this hint!</div>}
-            </div>
-            {!isCrew&&(
-              <div style={{background:"rgba(255,71,87,0.08)",border:"1px solid rgba(255,71,87,0.18)",borderRadius:4,padding:"0.65rem 1rem",marginBottom:"1.25rem",fontSize:"0.78rem",color:"rgba(255,71,87,0.8)",lineHeight:1.5}}>
-                Stay calm. Blend in. Use your hint to act like you know the word.
-              </div>
-            )}
-            <button onClick={closeModal} style={{width:"100%",background:"transparent",border:"1px solid #2d4166",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.7rem",letterSpacing:"0.12em",padding:"0.75rem",textTransform:"uppercase",borderRadius:4}}>
-              I've seen it — close
-            </button>
-            <div style={{textAlign:"center",fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",color:"#3a4a6a",marginTop:6,letterSpacing:"0.1em"}}>Auto-closes in {timeLeft}s</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function launch(names,word,hint,nImp){
+  const roles=Array(names.length).fill("crew");
+  shuf([...Array(names.length).keys()]).slice(0,nImp).forEach(i=>roles[i]="imp");
+  gs={players:names.map((n,i)=>({name:n,role:roles[i],content:roles[i]==="crew"?word:hint,seen:false})),nImp};
+  $("gimp").textContent=nImp;$("gply").textContent=names.length;
+  buildCards();$("allseen").style.display="none";$("pf").style.width="0%";
+  showScreen("gScreen");updateStat();
 }
 
-function App(){
-  const [phase,setPhase]=useState("setup");
-  const [gameData,setGameData]=useState(null);
-
-  const handleStart=(names,word,hint,nImp)=>{
-    const roles=Array(names.length).fill("crew");
-    shuffle([...Array(names.length).keys()]).slice(0,nImp).forEach(i=>roles[i]="imp");
-    const players=names.map((name,i)=>({name,role:roles[i],content:roles[i]==="crew"?word:hint}));
-    setGameData({players,nImp});
-    setPhase("game");
-  };
-
-  return(
-    <div style={{background:"#07090f",minHeight:"100vh"}}>
-      <div style={{padding:"1.1rem 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #1e2d47",background:"rgba(7,9,15,0.95)",position:"sticky",top:0,zIndex:10}}>
-        <div>
-          <div style={{fontFamily:"Georgia,serif",fontSize:"1.55rem",fontWeight:900,lineHeight:1}}>Impost<span style={{color:"#00e5c8"}}>e</span>r</div>
-          <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.48rem",letterSpacing:"0.3em",color:"#6b7fa3",marginTop:2,textTransform:"uppercase"}}>AI word game · up to 50 players</div>
-        </div>
-        <div style={{display:"flex",alignItems:"center",gap:10}}>
-          {phase==="game"&&gameData&&(
-            <span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",color:"#6b7fa3",textTransform:"uppercase"}}>
-              <b style={{color:"#00e5c8"}}>{gameData.nImp}</b> imposter{gameData.nImp>1?"s":""} · <b style={{color:"#00e5c8"}}>{gameData.players.length}</b> players
-            </span>
-          )}
-          {phase==="game"&&<button onClick={()=>{setPhase("setup");setGameData(null)}} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>↺ New Game</button>}
-          {phase==="setup"&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.15em",color:"#00e5c8"}}>⬟ AI HINTS</span>}
-        </div>
-      </div>
-      {phase==="setup"&&<Setup onStart={handleStart}/>}
-      {phase==="game"&&gameData&&<Game players={gameData.players}/>}
-    </div>
-  );
+function buildCards(){
+  const g=$("cgrid");g.innerHTML="";
+  gs.players.forEach((p,i)=>{
+    const el=document.createElement("div");el.className="pcard";el.id="pc"+i;
+    el.innerHTML=`<div class="pname">${p.name}</div><div class="picon">${ICONS[i%ICONS.length]}</div><div class="ptap">tap to reveal</div>`;
+    el.onclick=()=>openModal(i);
+    g.appendChild(el);
+  });
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+function openModal(i){
+  const p=gs.players[i];if(p.seen)return;
+  ci=i;const cr=p.role==="crew";
+  $("mname").textContent=p.name.toUpperCase();
+  $("mrole").textContent=cr?"Crewmate":"Imposter";
+  $("mrole").className="mrole "+(cr?"crew":"imp");
+  $("mdot").className="mdot "+(cr?"crew":"imp");
+  $("mg").className="mglow "+(cr?"crew":"imp");
+  const badge=$("mbadge");badge.textContent=cr?"✓  You know the word":"⚠  You are the Imposter";
+  badge.className="mbadge "+(cr?"crew":"imp");
+  const box=$("mbox");box.className="mbox "+(cr?"crew":"imp");
+  $("mlbl").textContent=cr?"Your word is":"Your hint";
+  $("mcontent").innerHTML=cr
+    ?`<div class="mword">${p.content}</div>`
+    :`<div class="mhint">${p.content}</div><div class="msub">This is your only clue — figure out the word</div>`;
+  $("mwarn").style.display=cr?"none":"block";
+  $("bd").classList.add("open");
+  let t=10;
+  $("tt").textContent="Closes in "+t+"s";
+  $("tf").style.transition="none";$("tf").style.width="100%";
+  setTimeout(()=>{$("tf").style.transition="width 10s linear";$("tf").style.width="0%"},50);
+  clearInterval(tiv);clearTimeout(ato);
+  tiv=setInterval(()=>{t--;$("tt").textContent=t>0?"Closes in "+t+"s":"";if(t<=0)clearInterval(tiv)},1000);
+  ato=setTimeout(closeModal,10000);
+}
+
+$("mclose").onclick=closeModal;
+$("bd").onclick=function(e){if(e.target===this)closeModal()};
+
+function closeModal(){
+  clearInterval(tiv);clearTimeout(ato);
+  $("bd").classList.remove("open");
+  if(ci===null)return;
+  gs.players[ci].seen=true;
+  const card=$("pc"+ci);
+  card.className="pcard pdone";
+  card.innerHTML=`<div class="pname">${gs.players[ci].name}</div><div class="picon">✦</div><div class="pseen">seen</div>`;
+  card.onclick=null;ci=null;updateStat();
+}
+
+function updateStat(){
+  const seen=gs.players.filter(p=>p.seen).length,total=gs.players.length;
+  $("wn").textContent=total-seen;$("rn").textContent=seen;
+  $("pf").style.width=`${(seen/total)*100}%`;
+  if(seen===total)$("allseen").style.display="block";
+}
+
+$("newBtn").onclick=()=>showScreen("sScreen");
+buildNames();
 </script>
 </body>
 </html>
