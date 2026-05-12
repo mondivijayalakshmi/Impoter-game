@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Imposter — Word Game</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#07090f;color:#e8edf5;font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(0,229,200,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,200,0.025) 1px,transparent 1px);background-size:40px 40px}
+input{background:#1a2236;border:1px solid #1e2d47;color:#e8edf5;font-family:'DM Mono',monospace;font-size:0.8rem;padding:8px 10px;outline:none;border-radius:4px;width:100%}
+input:focus{border-color:#00e5c8}
+input::placeholder{color:#3a4a6a}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#2d4166;border-radius:2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes popIn{from{opacity:0;transform:scale(0.88) translateY(16px)}to{opacity:1;transform:scale(1) translateY(0)}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const WORDS = [
+  "Rice","Dal","Idli","Dosa","Chapati","Biryani","Sambar","Pickle","Curd","Ghee",
+  "Milk","Tea","Coffee","Water","Juice","Egg","Bread","Biscuit","Chocolate","Mango",
+  "Banana","Tomato","Onion","Potato","Carrot","Chilli","Lemon","Coconut","Tamarind","Jaggery",
+  "Bed","Pillow","Blanket","Chair","Table","Fan","Lamp","Mirror","Broom","Bucket",
+  "Soap","Towel","Toothbrush","Comb","Scissors","Candle","Clock","Calendar","Bag","Wallet",
+  "Key","Umbrella","Slipper","Spectacles","Pen","Notebook","Newspaper","Rope","Coin","Basket",
+  "School","Market","Hospital","Temple","Bus","Auto","Train","Bicycle","Road","Bridge",
+  "Garden","Park","Well","River","Rain","Sun","Moon","Star","Cloud","Wind",
+  "Dog","Cat","Cow","Hen","Parrot","Fish","Ant","Butterfly","Crow","Peacock",
+  "Mahesh Babu","Prabhas","Allu Arjun","Ram Charan","Jr NTR","Vijay Deverakonda",
+  "Nani","Ravi Teja","Pawan Kalyan","Chiranjeevi","Balakrishna","Venkatesh",
+  "Nagarjuna","Siddharth","Adivi Sesh","Sharwanand","Nikhil","Gopichand",
+  "Samantha","Rashmika Mandanna","Pooja Hegde","Anushka Shetty","Kajal Aggarwal",
+  "Tamannaah","Nayanthara","Rakul Preet","Shruti Haasan","Keerthi Suresh",
+  "Sai Pallavi","Nabha Natesh","Ritu Varma","Payal Rajput","Lavanya Tripathi",
+  "Pragya Jaiswal","Raashi Khanna","Sreeleela","Catherine Tresa","Divyansha Kaushik"
+];
+
+const AUTO_NAMES = ["Arjun","Bhanu","Charan","Deepa","Eswar","Faria","Geetha","Hari","Indira","Jai","Kavya","Lokesh","Manasa","Naveen","Padma","Ravi","Swathi","Tarun","Uma","Vijay","Yamini","Zara","Anil","Bindu","Chandu","Divya","Eswar","Faiz","Gopi","Heera","Ishaan","Jyothi","Kiran","Lalitha","Mahesh","Nisha","Omkar","Priya","Rahul","Sita","Tej","Usha","Varun","Wasim","Xena","Yash","Zoya","Amara","Babu","Chitra"];
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+const FALLBACK={
+  "Rice":"fields and water make it","Dal":"pairs with everything on plate","Idli":"mornings start with it","Dosa":"crispy flat and round","Chapati":"rolled and pressed flat",
+  "Biryani":"dum cooked in layers","Sambar":"poured over things","Pickle":"sits in a jar for months","Curd":"set overnight in a pot","Ghee":"melts on hot things",
+  "Milk":"comes before sunrise","Tea":"morning without it is incomplete","Coffee":"keeps you awake at night","Water":"in everything but tasteless","Juice":"squeezed out of something",
+  "Egg":"came before or after","Bread":"sliced and stacked","Biscuit":"dipped before eaten","Chocolate":"melts in your hand","Mango":"king of summers",
+  "Banana":"monkeys love it too","Tomato":"red but not a fruit to most","Onion":"tears without sadness","Potato":"underground and underrated","Carrot":"buried orange",
+  "Chilli":"regret after eating","Lemon":"makes your face twist","Coconut":"hard outside soft inside","Tamarind":"used in most South Indian cooking","Jaggery":"unrefined sweetness",
+  "Bed":"best place on earth","Pillow":"hugged more than people","Blanket":"never big enough","Chair":"only one per person","Table":"everything ends up on it",
+  "Fan":"moves but stays in place","Lamp":"chased moths at night","Mirror":"shows what others see","Broom":"last thing used before sleeping","Bucket":"filled and carried",
+  "Soap":"shrinks with every use","Towel":"hung after every shower","Toothbrush":"used twice but often forgotten","Comb":"fights every morning","Scissors":"cuts but never hurts itself",
+  "Candle":"melts as it works","Clock":"never stops moving","Calendar":"crossed off day by day","Bag":"heavier than expected","Wallet":"thin but important",
+  "Key":"useless without its pair","Umbrella":"forgotten on sunny days","Slipper":"lost under the bed","Spectacles":"world is blurry without it","Pen":"runs out at wrong time",
+  "Notebook":"half filled and forgotten","Newspaper":"old by afternoon","Rope":"twisted and tied","Coin":"too small to care about","Basket":"woven from nothing useful",
+  "School":"years spent inside it","Market":"louder in the morning","Hospital":"nobody visits happily","Temple":"bells ring outside","Bus":"always late or early",
+  "Auto":"honks before stopping","Train":"heard before seen","Bicycle":"balance is the only rule","Road":"taken every single day","Bridge":"connects what was once apart",
+  "Garden":"grows without asking","Park":"crowded only in evenings","Well":"deep and circular","River":"never the same twice","Rain":"smells before it arrives",
+  "Sun":"follows you everywhere","Moon":"changes shape every night","Star":"there even when hidden","Cloud":"never stays in one place","Wind":"felt but never seen",
+  "Dog":"knows when you're home","Cat":"on its own schedule","Cow":"sacred and slow","Hen":"up before everyone else","Parrot":"repeats what it hears",
+  "Fish":"silent and forgotten","Ant":"carries more than its weight","Butterfly":"was something else before","Crow":"smarter than it looks","Peacock":"dances when it rains",
+  "Mahesh Babu":"never needs introduction in Tollywood","Prabhas":"Tollywood went national because of him","Allu Arjun":"style became a movement","Ram Charan":"royal family of Telugu cinema","Jr NTR":"roars louder than words",
+  "Vijay Deverakonda":"heartbreak made him famous","Nani":"audiences trust him fully","Ravi Teja":"never slows down on screen","Pawan Kalyan":"fans wait for years for him","Chiranjeevi":"grandfather of Telugu stardom",
+  "Balakrishna":"larger than screen itself","Venkatesh":"evergreen in Telugu homes","Nagarjuna":"stays relevant across decades","Siddharth":"crossed language borders early","Adivi Sesh":"proved small can be big",
+  "Sharwanand":"picks roles carefully","Nikhil":"consistent without much noise","Gopichand":"action more than words",
+  "Samantha":"reinvented herself twice","Rashmika Mandanna":"conquered North and South both","Pooja Hegde":"comfort in glamour","Anushka Shetty":"proved big is powerful","Kajal Aggarwal":"long career across industries",
+  "Tamannaah":"survived multiple film eras","Nayanthara":"industry on her own terms","Rakul Preet":"fitness before roles","Shruti Haasan":"talent from both parents","Keerthi Suresh":"award before fame",
+  "Sai Pallavi":"dances like nobody watches","Nabha Natesh":"energy on screen","Ritu Varma":"small film big name","Payal Rajput":"bold choices always","Lavanya Tripathi":"quiet but consistent",
+  "Pragya Jaiswal":"few films big impact","Raashi Khanna":"crosses industries easily","Sreeleela":"moves faster than the song","Catherine Tresa":"Tamil Telugu crossover","Divyansha Kaushik":"debut was unforgettable"
+};
+
+async function fetchHint(word){
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "anthropic-version":"2023-06-01",
+        "anthropic-dangerous-direct-browser-access":"true"
+      },
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:100,
+        system:"You are a clever hint-writer for a word guessing game. Given a secret word, write ONE short indirect clue (max 8 words). Rules: Do NOT say the word or its synonym. Do NOT give the category directly. Instead describe a feeling, behaviour, situation, or indirect association. Make it tricky but fair. Examples: Rice=fields flooded before harvest, Umbrella=forgotten on sunny mornings, Mahesh Babu=Tollywood never needed Bollywood, Onion=tears without any sadness, Candle=shrinks as it works. Output ONLY the clue, nothing else.",
+        messages:[{role:"user",content:"Secret word: "+word}]
+      })
+    });
+    if(!res.ok)throw new Error("status "+res.status);
+    const data=await res.json();
+    return data.content[0].text.trim();
+  }catch(e){
+    console.warn("API failed, using fallback:",e.message);
+    return FALLBACK[word]||(word.length>8?"famous personality":"daily life item");
+  }
+}
+
+function Counter({val,onDec,onInc,min,max}){
+  return(
+    <div style={{display:"flex",alignItems:"center",gap:8}}>
+      <button onClick={onDec} disabled={val<=min} style={{width:36,height:36,background:"#111827",border:"1px solid #1e2d47",color:val<=min?"#3a4a6a":"#e8edf5",fontSize:"1.1rem",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
+      <span style={{fontFamily:"Georgia,serif",fontSize:"2rem",fontWeight:700,color:"#00e5c8",minWidth:44,textAlign:"center"}}>{val}</span>
+      <button onClick={onInc} disabled={val>=max} style={{width:36,height:36,background:"#111827",border:"1px solid #1e2d47",color:val>=max?"#3a4a6a":"#e8edf5",fontSize:"1.1rem",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
+    </div>
+  );
+}
+
+function Setup({onStart}){
+  const [pCount,setPCount]=useState(6);
+  const [impCount,setImpCount]=useState(1);
+  const [names,setNames]=useState(Array(6).fill(""));
+  const [loading,setLoading]=useState(false);
+  const [error,setError]=useState("");
+
+  const syncNames=(n)=>setNames(prev=>{const a=[...prev];while(a.length<n)a.push("");return a.slice(0,n)});
+  const setP=(n)=>{setPCount(n);syncNames(n)};
+  const autoFill=()=>setNames(Array(pCount).fill(0).map((_,i)=>AUTO_NAMES[i]||`Player ${i+1}`));
+  const clearAll=()=>setNames(Array(pCount).fill(""));
+  const updateName=(i,v)=>setNames(p=>{const a=[...p];a[i]=v;return a});
+
+  const start=async()=>{
+    setError("");
+    const actualImp=Math.min(impCount,Math.max(1,Math.floor(pCount/4)));
+    const playerNames=names.map((n,i)=>n.trim()||`Player ${i+1}`);
+    const word=WORDS[Math.floor(Math.random()*WORDS.length)];
+    setLoading(true);
+    try{
+      const hint=await fetchHint(word);
+      onStart(playerNames,word,hint,actualImp);
+    }catch{
+      setError("Connection error. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  if(loading)return(
+    <div style={{minHeight:"80vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:20,position:"relative",zIndex:1}}>
+      <div style={{width:64,height:64,border:"2px solid #1e2d47",borderTopColor:"#00e5c8",borderRadius:"50%",animation:"spin 1s linear infinite"}}/>
+      <div style={{fontFamily:"Georgia,serif",fontSize:"1.5rem",fontWeight:700,color:"#00e5c8"}}>Picking a word…</div>
+      <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.2em",color:"#6b7fa3",textTransform:"uppercase"}}>Generating hint for imposter</div>
+    </div>
+  );
+
+  return(
+    <div style={{maxWidth:680,margin:"0 auto",padding:"1.5rem",position:"relative",zIndex:1}}>
+      <div style={{marginBottom:"2rem"}}>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.25em",color:"#00e5c8",textTransform:"uppercase",marginBottom:"0.75rem",paddingBottom:"0.4rem",borderBottom:"1px solid #1e2d47"}}>Imposters</div>
+        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+          <Counter val={impCount} onDec={()=>setImpCount(i=>i-1)} onInc={()=>setImpCount(i=>i+1)} min={1} max={5}/>
+          <span style={{fontSize:"0.8rem",color:"#6b7fa3"}}>imposter{impCount>1?"s":""} · gets a hint instead of the word</span>
+        </div>
+      </div>
+
+      <div style={{marginBottom:"2rem"}}>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.25em",color:"#00e5c8",textTransform:"uppercase",marginBottom:"0.75rem",paddingBottom:"0.4rem",borderBottom:"1px solid #1e2d47"}}>Players</div>
+        <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:"1rem"}}>
+          <Counter val={pCount} onDec={()=>setP(pCount-1)} onInc={()=>setP(pCount+1)} min={4} max={50}/>
+          <span style={{fontSize:"0.8rem",color:"#6b7fa3"}}>players (4–50)</span>
+        </div>
+        <div style={{display:"flex",gap:8,marginBottom:"0.75rem",flexWrap:"wrap"}}>
+          <button onClick={autoFill} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>Auto-fill names</button>
+          <button onClick={clearAll} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>Clear all</button>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:8,maxHeight:280,overflowY:"auto",border:"1px solid #1e2d47",borderRadius:4,padding:10,background:"#111827"}}>
+          {names.map((n,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:6,background:"#1a2236",border:"1px solid #1e2d47",borderRadius:4,padding:"6px 8px"}}>
+              <span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",color:"#3a4a6a",minWidth:18}}>{String(i+1).padStart(2,"0")}</span>
+              <input value={n} placeholder={`Player ${i+1}`} maxLength={18} onChange={e=>updateName(i,e.target.value)} style={{flex:1,background:"transparent",border:"none",color:"#e8edf5",fontFamily:"'DM Mono',monospace",fontSize:"0.75rem",outline:"none",padding:"1px 0",width:"100%"}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{borderTop:"1px solid #1e2d47",paddingTop:"1.5rem"}}>
+        <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.65rem",letterSpacing:"0.08em",color:"#6b7fa3",marginBottom:"1rem",textAlign:"center",background:"rgba(0,229,200,0.05)",border:"1px solid rgba(0,229,200,0.12)",borderRadius:4,padding:"0.6rem 1rem"}}>
+          ✦ Random word auto-assigned every round — no typing needed
+        </div>
+        <button onClick={start} style={{width:"100%",background:"#00e5c8",border:"none",color:"#07090f",fontFamily:"Georgia,serif",fontSize:"1.2rem",fontWeight:700,padding:"0.9rem",borderRadius:4,letterSpacing:"0.04em"}}>
+          Start Game →
+        </button>
+        {error&&<div style={{color:"#ff4757",fontFamily:"'DM Mono',monospace",fontSize:"0.68rem",marginTop:8}}>{error}</div>}
+      </div>
+    </div>
+  );
+}
+
+function Game({players,onRestart}){
+  const [seen,setSeen]=useState(new Set());
+  const [modal,setModal]=useState(null);
+  const [timeLeft,setTimeLeft]=useState(8);
+  const timerRef=useRef(null);
+
+  const openCard=(i)=>{if(seen.has(i))return;setModal(i);setTimeLeft(8)};
+
+  useEffect(()=>{
+    if(modal===null)return;
+    clearInterval(timerRef.current);
+    timerRef.current=setInterval(()=>{
+      setTimeLeft(t=>{if(t<=1){closeModal();return 0;}return t-1;});
+    },1000);
+    return()=>clearInterval(timerRef.current);
+  },[modal]);
+
+  const closeModal=()=>{
+    clearInterval(timerRef.current);
+    if(modal!==null)setSeen(prev=>new Set([...prev,modal]));
+    setModal(null);
+  };
+
+  const seenCount=seen.size,total=players.length;
+  const p=modal!==null?players[modal]:null;
+  const isCrew=p?.role==="crew";
+
+  return(
+    <div style={{position:"relative",zIndex:1}}>
+      <div style={{height:3,background:"#1e2d47",margin:"0 1.5rem 1.25rem"}}>
+        <div style={{height:"100%",background:"#00e5c8",borderRadius:2,transition:"width 0.4s",width:`${(seenCount/total)*100}%`}}/>
+      </div>
+      <div style={{textAlign:"center",fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.12em",color:"#6b7fa3",textTransform:"uppercase",padding:"0 1.5rem",marginBottom:"1rem"}}>
+        Pass the device — each player taps their card <b style={{color:"#f0b429"}}>privately</b>
+      </div>
+      {seenCount===total&&(
+        <div style={{margin:"0 1.5rem 1rem",background:"rgba(46,213,115,0.08)",border:"1px solid rgba(46,213,115,0.2)",borderRadius:4,padding:"0.75rem 1rem",fontFamily:"'DM Mono',monospace",fontSize:"0.68rem",color:"#2ed573",textAlign:"center"}}>
+          ✓ Everyone seen their role — start the discussion!
+        </div>
+      )}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:10,padding:"0 1.5rem"}}>
+        {players.map((p,i)=>{
+          const done=seen.has(i);
+          return(
+            <div key={i} onClick={()=>openCard(i)} style={{border:`1px solid ${done?"rgba(46,213,115,0.25)":"#1e2d47"}`,background:done?"rgba(46,213,115,0.06)":"#111827",borderRadius:6,padding:"1rem 0.75rem",textAlign:"center",aspectRatio:"4/3",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:6,cursor:done?"default":"pointer",userSelect:"none"}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.65rem",color:"#6b7fa3",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>{p.name}</div>
+              <div style={{fontSize:"1.5rem",lineHeight:1}}>{done?"✓":"👤"}</div>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",letterSpacing:"0.12em",textTransform:"uppercase",color:done?"#2ed573":"#3a4a6a"}}>{done?"seen":"tap to reveal"}</div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:"flex",justifyContent:"center",gap:"2rem",padding:"1.25rem 1.5rem",borderTop:"1px solid #1e2d47",marginTop:"1.5rem",fontFamily:"'DM Mono',monospace",fontSize:"0.62rem",letterSpacing:"0.12em",color:"#6b7fa3",textTransform:"uppercase"}}>
+        <span>Waiting: <b style={{color:"#e8edf5"}}>{total-seenCount}</b></span>
+        <span>Ready: <b style={{color:"#2ed573"}}>{seenCount}</b></span>
+      </div>
+
+      {modal!==null&&p&&(
+        <div onClick={e=>e.target===e.currentTarget&&closeModal()} style={{position:"fixed",inset:0,zIndex:200,background:"rgba(0,0,0,0.9)",backdropFilter:"blur(6px)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{background:"#0d1120",border:"1px solid #2d4166",borderRadius:8,padding:"2rem 1.75rem",maxWidth:360,width:"100%",animation:"popIn 0.25s ease-out"}}>
+            <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",letterSpacing:"0.25em",color:"#6b7fa3",marginBottom:"0.6rem",textTransform:"uppercase"}}>{p.name}</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:"2.4rem",fontWeight:900,lineHeight:1,marginBottom:"0.4rem",color:isCrew?"#2ed573":"#ff4757"}}>{isCrew?"Crewmate":"Imposter"}</div>
+            <div style={{display:"inline-block",fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",letterSpacing:"0.15em",textTransform:"uppercase",padding:"3px 10px",borderRadius:3,marginBottom:"1.25rem",background:isCrew?"rgba(46,213,115,0.1)":"rgba(255,71,87,0.1)",color:isCrew?"#2ed573":"#ff4757",border:`1px solid ${isCrew?"rgba(46,213,115,0.25)":"rgba(255,71,87,0.25)"}`}}>
+              {isCrew?"✓ You know the word":"⚠ You are the Imposter"}
+            </div>
+            <div style={{border:"1px solid #2d4166",borderRadius:6,padding:"1rem 1.25rem",marginBottom:"1.25rem",background:"#111827"}}>
+              <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",letterSpacing:"0.2em",color:"#6b7fa3",marginBottom:"0.5rem",textTransform:"uppercase"}}>{isCrew?"Your word is":"Your hint is"}</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:"2rem",fontWeight:700,color:isCrew?"#e8edf5":"#f0b429",lineHeight:1.2}}>{p.content}</div>
+              {!isCrew&&<div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.55rem",color:"#3a4a6a",marginTop:8,textTransform:"uppercase",letterSpacing:"0.05em"}}>Guess the exact word from this hint!</div>}
+            </div>
+            {!isCrew&&(
+              <div style={{background:"rgba(255,71,87,0.08)",border:"1px solid rgba(255,71,87,0.18)",borderRadius:4,padding:"0.65rem 1rem",marginBottom:"1.25rem",fontSize:"0.78rem",color:"rgba(255,71,87,0.8)",lineHeight:1.5}}>
+                Stay calm. Blend in. Use your hint to act like you know the word.
+              </div>
+            )}
+            <button onClick={closeModal} style={{width:"100%",background:"transparent",border:"1px solid #2d4166",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.7rem",letterSpacing:"0.12em",padding:"0.75rem",textTransform:"uppercase",borderRadius:4}}>
+              I've seen it — close
+            </button>
+            <div style={{textAlign:"center",fontFamily:"'DM Mono',monospace",fontSize:"0.58rem",color:"#3a4a6a",marginTop:6,letterSpacing:"0.1em"}}>Auto-closes in {timeLeft}s</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App(){
+  const [phase,setPhase]=useState("setup");
+  const [gameData,setGameData]=useState(null);
+
+  const handleStart=(names,word,hint,nImp)=>{
+    const roles=Array(names.length).fill("crew");
+    shuffle([...Array(names.length).keys()]).slice(0,nImp).forEach(i=>roles[i]="imp");
+    const players=names.map((name,i)=>({name,role:roles[i],content:roles[i]==="crew"?word:hint}));
+    setGameData({players,nImp});
+    setPhase("game");
+  };
+
+  return(
+    <div style={{background:"#07090f",minHeight:"100vh"}}>
+      <div style={{padding:"1.1rem 1.5rem",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:"1px solid #1e2d47",background:"rgba(7,9,15,0.95)",position:"sticky",top:0,zIndex:10}}>
+        <div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:"1.55rem",fontWeight:900,lineHeight:1}}>Impost<span style={{color:"#00e5c8"}}>e</span>r</div>
+          <div style={{fontFamily:"'DM Mono',monospace",fontSize:"0.48rem",letterSpacing:"0.3em",color:"#6b7fa3",marginTop:2,textTransform:"uppercase"}}>AI word game · up to 50 players</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          {phase==="game"&&gameData&&(
+            <span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",color:"#6b7fa3",textTransform:"uppercase"}}>
+              <b style={{color:"#00e5c8"}}>{gameData.nImp}</b> imposter{gameData.nImp>1?"s":""} · <b style={{color:"#00e5c8"}}>{gameData.players.length}</b> players
+            </span>
+          )}
+          {phase==="game"&&<button onClick={()=>{setPhase("setup");setGameData(null)}} style={{background:"transparent",border:"1px solid #1e2d47",color:"#6b7fa3",fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.1em",padding:"6px 14px",textTransform:"uppercase",borderRadius:4}}>↺ New Game</button>}
+          {phase==="setup"&&<span style={{fontFamily:"'DM Mono',monospace",fontSize:"0.6rem",letterSpacing:"0.15em",color:"#00e5c8"}}>⬟ AI HINTS</span>}
+        </div>
+      </div>
+      {phase==="setup"&&<Setup onStart={handleStart}/>}
+      {phase==="game"&&gameData&&<Game players={gameData.players}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
